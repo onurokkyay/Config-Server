@@ -1,13 +1,25 @@
 server:
-  port: 8888
+  port: ${SERVER_PORT:8888}
 
 spring:
+  application:
+    name: config-server
   cloud:
     config:
       server:
         git:
-          uri: https://github.com/onurokkyay/Config-Repo.git
-          username: onurokkyay
-          password: ${GIT_TOKEN}
-  application:
-    name: config-server
+          # Defaults to the GitHub repository; GIT_URI can point at a local clone
+          # (file:///path/to/Config-Repo) to run the estate without a credential, which is what
+          # makes an end-to-end test possible on a developer machine and in CI.
+          uri: ${GIT_URI:https://github.com/onurokkyay/Config-Repo.git}
+          username: ${GIT_USERNAME:onurokkyay}
+          # Absent for a local or public URI. Left without a default on purpose: a blank password
+          # against the real repository fails loudly rather than serving stale configuration.
+          password: ${GIT_TOKEN:}
+          default-label: ${GIT_BRANCH:main}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
