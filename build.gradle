@@ -37,6 +37,18 @@ dependencyManagement {
 	}
 }
 
+tasks.named("bootJar") {
+	archiveFileName = "config-server.jar"
+	layered {
+		enabled = true
+	}
+}
+
+tasks.named("jar") {
+	// Do not produce the plain (non-executable) jar alongside the boot jar.
+	enabled = false
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 }
