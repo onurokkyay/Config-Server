@@ -26,6 +26,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build and test
+        run: ./gradlew build
+
   serves-configuration:
     name: Serves configuration from a git backend
     runs-on: ubuntu-latest
@@ -64,26 +66,38 @@ jobs:
           for attempt in $(seq 1 60); do
             curl -fsS http://localhost:8888/actuator/health > /dev/null 2>&1 && break
             if [ "$attempt" = "60" ]; then
-              echo "Config server never answered:"; cat /tmp/server.log; exit 1
+              echo "Config server never answered:"
+              cat /tmp/server.log
+              exit 1
             fi
             sleep 2
           done
           echo "Config server is up"
 
           known=$(curl -fsS http://localhost:8888/api-gateway/default)
-          echo "$known" | grep -q "from-api-gateway-yml" \
-            || { echo "api-gateway.yml was not served:"; echo "$known"; cat /tmp/server.log; exit 1; }
-          echo "$known" | grep -q "from-application-yml" \
-            || { echo "the shared application.yml was not merged in:"; echo "$known"; exit 1; }
+          echo "$known" | grep -q "from-api-gateway-yml" || {
+            echo "api-gateway.yml was not served:"
+            echo "$known"
+            exit 1
+          }
+          echo "$known" | grep -q "from-application-yml" || {
+            echo "the shared application.yml was not merged in:"
+            echo "$known"
+            exit 1
+          }
           echo "A known name carries its own properties"
 
           unknown=$(curl -fsS http://localhost:8888/does-not-exist/default)
           if echo "$unknown" | grep -q "from-api-gateway-yml"; then
-            echo "An unknown name received another service's configuration"; exit 1
+            echo "An unknown name received another service's configuration"
+            exit 1
           fi
-          echo "$unknown" | grep -q "from-application-yml" \
-            || { echo "expected the shared application.yml:"; echo "$unknown"; exit 1; }
-          echo "An unknown name gets the shared file and no error, which is why clients must name themselves"
+          echo "$unknown" | grep -q "from-application-yml" || {
+            echo "expected the shared application.yml:"
+            echo "$unknown"
+            exit 1
+          }
+          echo "An unknown name gets the shared file and no error, which is why clients name themselves"
 
       - name: Server log on failure
         if: failure()
